@@ -1,0 +1,39 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/genai": "^1.48.0",
+    "@google/generative-ai": "^0.24.1",
+    "@nut-tree-fork/nut-js": "^4.2.6",
+    "active-win": "^8.2.1",
+    "axios": "^1.15.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dns": "^0.2.2",
+    "dotenv": "^17.4.1",
+    "env": "^0.0.2",
+    "express": "^5.2.1",
+    "google-tts-api": "^2.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.1.1",
+    "mongoose": "^9.4.1",
+    "node-pty": "^1.1.0",
+    "nodemon": "^3.1.14",
+    "open": "^11.0.0",
+    "openai": "^6.34.0",
+    "puppeteer": "^24.41.0",
+    "socket.io": "^4.8.3",
+    "uuid": "^13.0.0"
+  }
+}

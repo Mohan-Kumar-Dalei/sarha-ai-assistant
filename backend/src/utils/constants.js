@@ -1,0 +1,8 @@
+const CONSTANTS = {
+    MAX_HISTORY: 10,
+    ACTION_DELAY_MS: 500,
+    MESSAGE_MAX_LENGTH: 1000,
+    DB_TIMEOUT: 5000
+};
+
+module.exports = CONSTANTS;
