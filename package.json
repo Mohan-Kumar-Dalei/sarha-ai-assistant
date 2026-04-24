@@ -3,6 +3,6 @@
     "version": "1.0.0",
     "scripts": {
         "build": "./render-build.sh",
-        "start": "node Backend/server.js"
+        "start": "node backend/server.js"
     }
 }
