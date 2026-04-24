@@ -5,7 +5,7 @@ set -o errexit
 
 echo "--- 📦 Installing Backend Dependencies ---"
 # Root folder se Backend mein ja kar install karein
-cd Backend
+cd backend
 npm install
 cd ..
 
@@ -16,7 +16,7 @@ npx puppeteer browsers install chrome
 
 echo "--- 🎨 Building Frontend ---"
 # Frontend folder mein ja kar dependencies install aur build karein
-cd Frontend
+cd frontend
 npm install
 npm run build
 cd ..
