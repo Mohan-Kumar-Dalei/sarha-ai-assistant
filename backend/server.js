@@ -26,7 +26,7 @@ const io = new Server(server, {
 connectDB();   
 
 // 4. Setup Sockets
-setupSockets(io);
+setupSockets(io); 
 
 // 5. App.listen ki jagah Server.listen use karenge  
 server.listen(PORT, () => {
