@@ -8,24 +8,24 @@ const userRoutes = require("./routes/user.route");
 const path = require("path");
 const app = express();
 
-
-// 👇 YAHAN CHANGE KIYA HAI
-// Frontend ka static folder (Build ke baad)
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-app.use(cors({
-    origin: "http://localhost:5173", // Apna React/Vite ka exact URL dalein
-    credentials: true // Cookies allow karne ke liye ye zaroori hai
-}));
-// SPA fallback
-app.use((req, res) => {
-    res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
-});
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors({
+    origin: ["http://localhost:5173", "https://sarha-ai-assistant.onrender.com"], // Apna React/Vite ka exact URL dalein
+    credentials: true // Cookies allow karne ke liye ye zaroori hai
+}));
+
 app.use("/api/ai", aiRoutes);
 app.use('/api/tts', ttsRoutes);
 app.use("/api/auth", authRoutes);
 app.get("/api/auth", authRoutes)
 app.use("/api", userRoutes);
 
+
+// Frontend ka static folder (Build ke baad)
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// SPA fallback
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
+});
 module.exports = app;
