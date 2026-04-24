@@ -30,7 +30,7 @@ const frontendPath = path.resolve(__dirname, "../../frontend/dist");
 app.use(express.static(frontendPath));
 
 // 4. SMART Fallback (Isse error nahi aayega)
-app.get("*", (req, res) => {
+app.get(".*", (req, res) => {
     // Agar request '/api' ya assets ki file ke liye hai jo nahi mili, toh HTML mat bhejo
     if (req.path.startsWith('/api') || req.path.includes('.')) {
         return res.status(404).send("File or Route not found");
