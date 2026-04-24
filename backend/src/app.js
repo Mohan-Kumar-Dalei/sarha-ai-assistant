@@ -11,7 +11,8 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: ["http://localhost:5173", "https://sarha-ai-assistant.onrender.com"],
+    origin: ["http://localhost:5173", "https://sarha-ai-assistant-zf5p.onrender.com"],
+    methods: ["GET", "POST"],
     credentials: true
 }));
 
