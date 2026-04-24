@@ -23,7 +23,7 @@ const io = new Server(server, {
 
 
 // 3. DB connect
-connectDB(); 
+connectDB();   
 
 // 4. Setup Sockets
 setupSockets(io);
