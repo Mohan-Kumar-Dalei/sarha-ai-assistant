@@ -144,7 +144,7 @@ const VoiceAgent = () => {
             console.log("Audio blob received:", response.data.size, "bytes, type:", response.data.type);
             const audioUrl = URL.createObjectURL(response.data);
             const sarhaAudio = new Audio(audioUrl);
-
+            sarhaAudio.volume = 1.0;
             sarhaAudio.onended = () => {
                 URL.revokeObjectURL(audioUrl);
                 finishSpeaking();

@@ -70,10 +70,10 @@ const generateOpenAIVoice = async (text) => {
     const openai = new OpenAI({ apiKey });
 
     const mp3 = await openai.audio.speech.create({
-        model: "tts-1",
-        voice: "shimmer",
+        model: "gpt-4o-mini-tts-2025-03-20",
+        voice: "marin",
         input: text,
-        speed: 0.85
+        speed: 1.00
     });
 
     return Buffer.from(await mp3.arrayBuffer());
