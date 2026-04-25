@@ -34,8 +34,7 @@ const handleAI = async (req, res) => {
                 // 🔥 THE DEVNAGARI HACK IN PROMPT
                 aiPrompt = `User wants detailed weather info. System extracted this data: [${weatherInfo}]. 
                 CRITICAL INSTRUCTION FOR SARHA: Explain this weather data in extreme detail. Talk about the temperature, explain what the wind speed means, mention rain probability and humidity. Make your response at least 4 to 5 sentences long, conversational, helpful, and completely in natural Hinglish style. Tell the user you have opened the Zoom Earth live radar map on their screen to see sunset, sunrise, and pressure data. 
-                ⚠️ STRICT RULE:  your entire speak response in DEVANAGARI SCRIPT hinglish text so the TTS engine pronounces it correctly with an Indian accent. You can keep English tech words (like 'Map', 'Radar', 'Humidity') in English alphabets. 
-                Example: 'सर, मैं आपके लिए ज़ूम अर्थ (Zoom Earth) का लाइव रडार ओपन कर रही हूँ।'`;
+                ⚠️ STRICT RULE:  your entire speak response in hinglish text so the TTS engine pronounces it correctly with an Indian accent. You can keep English tech words (like 'Map', 'Radar', 'Humidity') in English alphabets. `;
 
                 actionType = "weather";
             }

@@ -152,41 +152,34 @@ const openYouTubeSearch = async (query) => {
 
 const checkAndOpenWeather = async (location = "Bhubaneswar") => {
     try {
-        console.log(`[SYSTEM] Fetching weather API for: ${location}`);
+        const page = await getSharedPage();
+        const searchQuery = encodeURIComponent(`weather in ${location}`);
 
-        // 🔥 FIX 1: Google Bot Block se bachne ke liye Direct Free API use karo (No API key needed)
-        // Ye Google Chrome kholne se 100 गुना fast hai!
-        const response = await fetch(`https://wttr.in/${encodeURIComponent(location)}?format=j1`);
+        await page.goto(`https://www.google.com/search?q=${searchQuery}&hl=en`, { waitUntil: "domcontentloaded", timeout: 20000 });
 
-        if (!response.ok) throw new Error("Weather API failed");
-
-        const data = await response.json();
-
-        // Data extract karo
-        const temp = data.current_condition[0].temp_C;
-        const condition = data.current_condition[0].weatherDesc[0].value;
-        const humidity = data.current_condition[0].humidity;
-        const wind = data.current_condition[0].windspeedKmph;
-
-        // 🔥 FIX 2: Zoom Earth Logic (Sirf Local mode mein)
-        const isProduction = process.env.NODE_ENV === 'production';
-        if (!isProduction) {
-            try {
-                const page = await getSharedPage(); // Browser connection check
-                const safeCityName = location.split(" ")[0].trim().toLowerCase();
-                const zoomEarthUrl = `https://zoom.earth/places/india/${safeCityName}/`;
-
-                const zoomPage = await globalBrowser.newPage();
-                zoomPage.goto(zoomEarthUrl).catch(() => { });
-            } catch (e) {
-                console.log("Zoom Earth open karne mein error.");
-            }
+        let temp = "N/A", condition = "N/A", humidity = "N/A", wind = "N/A", rain = "N/A";
+        try {
+            await page.waitForSelector('#wob_tm', { timeout: 5000 });
+            temp = await page.$eval('#wob_tm', el => el.innerText);
+            condition = await page.$eval('#wob_dc', el => el.innerText);
+            humidity = await page.$eval('#wob_hm', el => el.innerText);
+            wind = await page.$eval('#wob_ws', el => el.innerText);
+            rain = await page.$eval('#wob_pp', el => el.innerText);
+        } catch (e) {
+            logger.warn("Detailed weather fetch failed, basic info only.");
         }
 
-        return `Temperature: ${temp}°C, Condition: ${condition}, Wind: ${wind} km/h, Humidity: ${humidity}%`;
+        // Zoom Earth logic
+        const safeCityName = location.split(" ")[0].trim().toLowerCase();
+        const zoomEarthUrl = `https://zoom.earth/places/india/${safeCityName}/`;
+
+        // Background mein Zoom Earth khol do
+        page.goto(zoomEarthUrl).catch(e => console.log("Zoom Earth Load failed"));
+
+        return `Temperature: ${temp}°C, Condition: ${condition}, Wind: ${wind}, Humidity: ${humidity}, Rain Probability: ${rain}`;
     } catch (error) {
-        console.error("Weather fetch error:", error.message);
-        return "Weather information is currently unavailable due to network issues.";
+        logger.error("Weather browser error:", error.message);
+        return "Weather fetch failed.";
     }
 };
 
