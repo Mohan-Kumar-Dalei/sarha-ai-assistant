@@ -46,7 +46,7 @@ const LocalActionModal = ({ isOpen, onClose }) => {
                         >
                             <div className="flex items-center gap-4">
                                 <div className="p-2 bg-black rounded-lg border border-white/10">
-                                    <Github size={18} className="text-white" />
+                                    <Computer size={18} className="text-white" />
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-medium text-white">Pull from GitHub</span>
