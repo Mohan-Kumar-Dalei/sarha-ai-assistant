@@ -221,7 +221,7 @@ const VoiceAgent = () => {
                     const msg = "System actions are locked in cloud mode. Run locally to use this. Just pull it from the repository on your machine.";
                     setAiResponseText(msg);
                     addLog('[WARN] Local Environment Required for System Actions');
-                    speakText(msg, () => { });
+                    speakText(msg, () => { setTimeout(() => setAiResponseText(''), 1000) });
                 }
             } else {
                 setSpeakerColor('green');
