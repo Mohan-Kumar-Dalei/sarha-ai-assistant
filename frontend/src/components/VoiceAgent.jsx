@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Activity, PowerOff, Mic, MicOff, LogOut, Settings } from 'lucide-react';
 import apiClient from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
+import LocalActionModal from './ActionModal';
 
 const VoiceAgent = () => {
     const [userName, setUserName] = useState("Operator");
@@ -12,6 +13,7 @@ const VoiceAgent = () => {
     const [micVolume, setMicVolume] = useState(0);
     const [isMicBridgeOpen, setIsMicBridgeOpen] = useState(false);
     const [sysLogs, setSysLogs] = useState(['[CORE] Awaiting Initialization...']);
+    const [isLocalModalOpen, setIsLocalModalOpen] = useState(false);
 
     const systemStateRef = useRef('offline');
     const recognitionRef = useRef(null);
@@ -22,7 +24,7 @@ const VoiceAgent = () => {
     const isSpeakingRef = useRef(false);
     const hasWelcomedRef = useRef(false);
     const navigate = useNavigate();
-
+    const isLocalEnvironment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     const addLog = (msg) => {
         setSysLogs(prev => {
@@ -207,11 +209,20 @@ const VoiceAgent = () => {
                 userText.includes("shutdown the system");
 
             if (isShutdownCommand) {
-                setSpeakerColor('red');
-                addLog('[WARN] SHUTDOWN PROTOCOL INITIATED');
-                const customMessage = `Terminating all systems. Good Bye ${userName}.`;
-                setAiResponseText(customMessage);
-                speakText(customMessage, () => { });
+                if (isLocalEnvironment) {
+                    setSpeakerColor('red');
+                    addLog('[WARN] SHUTDOWN PROTOCOL INITIATED');
+                    const customMessage = `Terminating all systems. Good Bye ${userName}.`;
+                    setAiResponseText(customMessage);
+                    speakText(customMessage, () => { });
+                } else {
+                    setIsLocalModalOpen(true);
+                    setSpeakerColor('yellow'); // Warning color
+                    const msg = "System actions are locked in cloud mode. Run locally to use this. Just pull it from the repository on your machine.";
+                    setAiResponseText(msg);
+                    addLog('[WARN] Local Environment Required for System Actions');
+                    speakText(msg, () => { });
+                }
             } else {
                 setSpeakerColor('green');
                 speakText(fullResponse, () => {
@@ -581,7 +592,10 @@ const VoiceAgent = () => {
             <div className="absolute bottom-4 w-full text-center flex items-center justify-center gap-2 text-[10px] text-gray-600 font-medium tracking-widest z-10 uppercase">
                 Made with <span className="text-red-500 animate-[pulse_1.5s_ease-in-out_infinite] drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]">❤️</span> Mohan
             </div>
-
+            <LocalActionModal
+                isOpen={isLocalModalOpen}
+                onClose={() => setIsLocalModalOpen(false)}
+            />
         </div>
     );
 };
