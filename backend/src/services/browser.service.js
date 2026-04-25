@@ -152,37 +152,30 @@ const openYouTubeSearch = async (query) => {
 
 const checkAndOpenWeather = async (location = "Bhubaneswar") => {
     try {
-        const page = await getSharedPage();
+        console.log(`[SYSTEM] Fetching weather API for: ${location}`);
 
-        // 🔥 FIX 1: Google ko lagna chahiye ki ye Windows PC se asli insan chala raha hai
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        await page.setExtraHTTPHeaders({
-            'Accept-Language': 'en-US,en;q=0.9'
-        });
+        // 🔥 FIX 1: Google Bot Block se bachne ke liye Direct Free API use karo (No API key needed)
+        // Ye Google Chrome kholne se 100 गुना fast hai!
+        const response = await fetch(`https://wttr.in/${encodeURIComponent(location)}?format=j1`);
 
-        const searchQuery = encodeURIComponent(`weather in ${location}`);
+        if (!response.ok) throw new Error("Weather API failed");
 
-        await page.goto(`https://www.google.com/search?q=${searchQuery}&hl=en`, { waitUntil: "domcontentloaded", timeout: 20000 });
+        const data = await response.json();
 
-        let temp = "N/A", condition = "N/A", humidity = "N/A", wind = "N/A", rain = "N/A";
-        try {
-            await page.waitForSelector('#wob_tm', { timeout: 5000 });
-            temp = await page.$eval('#wob_tm', el => el.innerText);
-            condition = await page.$eval('#wob_dc', el => el.innerText);
-            humidity = await page.$eval('#wob_hm', el => el.innerText);
-            wind = await page.$eval('#wob_ws', el => el.innerText);
-            rain = await page.$eval('#wob_pp', el => el.innerText);
-        } catch (e) {
-            logger.warn("Google ne bot samajh kar block kiya ya weather widget nahi mila.");
-        }
+        // Data extract karo
+        const temp = data.current_condition[0].temp_C;
+        const condition = data.current_condition[0].weatherDesc[0].value;
+        const humidity = data.current_condition[0].humidity;
+        const wind = data.current_condition[0].windspeedKmph;
 
-        // 🔥 FIX 2: Zoom Earth Logic (Sirf Local mode mein kholo, Cloud par screen hi nahi hoti)
+        // 🔥 FIX 2: Zoom Earth Logic (Sirf Local mode mein)
         const isProduction = process.env.NODE_ENV === 'production';
         if (!isProduction) {
             try {
+                const page = await getSharedPage(); // Browser connection check
                 const safeCityName = location.split(" ")[0].trim().toLowerCase();
                 const zoomEarthUrl = `https://zoom.earth/places/india/${safeCityName}/`;
-                // Naye tab mein kholo taaki weather wala page crash na ho
+
                 const zoomPage = await globalBrowser.newPage();
                 zoomPage.goto(zoomEarthUrl).catch(() => { });
             } catch (e) {
@@ -190,10 +183,10 @@ const checkAndOpenWeather = async (location = "Bhubaneswar") => {
             }
         }
 
-        return `Temperature: ${temp}°C, Condition: ${condition}, Wind: ${wind}, Humidity: ${humidity}, Rain Probability: ${rain}`;
+        return `Temperature: ${temp}°C, Condition: ${condition}, Wind: ${wind} km/h, Humidity: ${humidity}%`;
     } catch (error) {
-        logger.error("Weather browser error:", error.message);
-        return "Weather fetch failed.";
+        console.error("Weather fetch error:", error.message);
+        return "Weather information is currently unavailable due to network issues.";
     }
 };
 
