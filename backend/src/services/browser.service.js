@@ -153,6 +153,13 @@ const openYouTubeSearch = async (query) => {
 const checkAndOpenWeather = async (location = "Bhubaneswar") => {
     try {
         const page = await getSharedPage();
+
+        // 🔥 FIX 1: Google ko lagna chahiye ki ye Windows PC se asli insan chala raha hai
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        await page.setExtraHTTPHeaders({
+            'Accept-Language': 'en-US,en;q=0.9'
+        });
+
         const searchQuery = encodeURIComponent(`weather in ${location}`);
 
         await page.goto(`https://www.google.com/search?q=${searchQuery}&hl=en`, { waitUntil: "domcontentloaded", timeout: 20000 });
@@ -166,15 +173,22 @@ const checkAndOpenWeather = async (location = "Bhubaneswar") => {
             wind = await page.$eval('#wob_ws', el => el.innerText);
             rain = await page.$eval('#wob_pp', el => el.innerText);
         } catch (e) {
-            logger.warn("Detailed weather fetch failed, basic info only.");
+            logger.warn("Google ne bot samajh kar block kiya ya weather widget nahi mila.");
         }
 
-        // Zoom Earth logic
-        const safeCityName = location.split(" ")[0].trim().toLowerCase();
-        const zoomEarthUrl = `https://zoom.earth/places/india/${safeCityName}/`;
-
-        // Background mein Zoom Earth khol do
-        page.goto(zoomEarthUrl).catch(e => console.log("Zoom Earth Load failed"));
+        // 🔥 FIX 2: Zoom Earth Logic (Sirf Local mode mein kholo, Cloud par screen hi nahi hoti)
+        const isProduction = process.env.NODE_ENV === 'production';
+        if (!isProduction) {
+            try {
+                const safeCityName = location.split(" ")[0].trim().toLowerCase();
+                const zoomEarthUrl = `https://zoom.earth/places/india/${safeCityName}/`;
+                // Naye tab mein kholo taaki weather wala page crash na ho
+                const zoomPage = await globalBrowser.newPage();
+                zoomPage.goto(zoomEarthUrl).catch(() => { });
+            } catch (e) {
+                console.log("Zoom Earth open karne mein error.");
+            }
+        }
 
         return `Temperature: ${temp}°C, Condition: ${condition}, Wind: ${wind}, Humidity: ${humidity}, Rain Probability: ${rain}`;
     } catch (error) {
