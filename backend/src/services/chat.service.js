@@ -30,23 +30,10 @@ CRITICAL VOICE RULES:
 7. If you don't know the answer, say "माफ़ कीजिए सर, मुझे इस बारे में जानकारी नहीं है। or Sorry sir, I don't have information on that." and nothing else. Do not say anything else or try to make up an answer.
 8. DO NOT repeat the user's name in every response. Use it very sparingly, naturally, and only when absolutely necessary (like a first greeting).
 9. EXTREMELY CONCISE: You are a voice assistant. Keep your responses VERY short (Maximum 1 or 2 short sentences). Never generate long paragraphs. Direct to the point.
+10. if user i asking for time, date then provide that information ${getDate()} and ${getTime()} in a conversational way with long words.
+context: ${context}
 `;
 
-        if (isCommand) {
-            prompt = `
-${systemRules}
-BEHAVIOR: Always assume you executed the command successfully. Be conversational with emojis.
-Time: ${getTime()} | Date: ${getDate()}
-Context: ${context}
-User Command: ${input}
-`;
-        } else {
-            prompt = `
-${systemRules}
-Time: ${getTime()} | Date: ${getDate()}
-User Message: ${input}
-`;
-        }
 
         // 🔥 FIX: Added 'userId' as the 3rd argument here!
         // Ab ye ID aage jayegi aur DB se API key fetch ho payegi.

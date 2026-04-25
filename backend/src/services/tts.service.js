@@ -73,7 +73,7 @@ const generateOpenAIVoice = async (text) => {
         model: "gpt-4o-mini-tts-2025-03-20",
         voice: "marin",
         input: text,
-        speed: 1.00
+        speed: 0.85
     });
 
     return Buffer.from(await mp3.arrayBuffer());
