@@ -33,17 +33,37 @@ const getBrowserPath = () => {
             '/usr/bin/google-chrome',
             '/usr/bin/chromium-browser'
         ];
+
+        // 🔥 RENDER ULTIMATE FIX: Dynamically find Chrome in project folder
+        try {
+            // process.cwd() tumhara 'backend' folder hoga
+            const cacheChromeDir = path.join(process.cwd(), ".cache", "puppeteer", "chrome");
+
+            if (fs.existsSync(cacheChromeDir)) {
+                // Folder ke andar ke versions padho (e.g., 'linux-147.0.7727.56')
+                const versions = fs.readdirSync(cacheChromeDir);
+                if (versions.length > 0) {
+                    // Exact path banao bina version number hardcode kiye
+                    const exactChromePath = path.join(cacheChromeDir, versions[0], "chrome-linux64", "chrome");
+
+                    // isko list mein sabse upar daal do taaki sabse pehle yahi check ho
+                    paths.unshift(exactChromePath);
+                }
+            }
+        } catch (err) {
+            console.log("⚠️ [SYSTEM] Cache search error:", err.message);
+        }
     }
 
     // 2. Local OS Discovery
     for (let p of paths) {
         if (fs.existsSync(p)) {
-            console.log(`🌐 [SYSTEM] Using Local Browser at: ${p}`);
+            console.log(`🌐 [SYSTEM] Found & Using Browser at: ${p}`);
             return p;
         }
     }
 
-    // 3. Fallback: Default Puppeteer Path
+    // 3. Fallback
     console.log(`🌐 [SYSTEM] Local browser not found. Using Puppeteer's default.`);
     return null;
 };
