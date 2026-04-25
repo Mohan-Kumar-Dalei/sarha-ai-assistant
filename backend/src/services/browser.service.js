@@ -1,50 +1,88 @@
 const puppeteer = require("puppeteer");
 const logger = require("../utils/logger");
 const path = require("path");
+const fs = require("fs");
+const os = require("os");
 
-// 🔥 Global browser aur page define kiya taaki baar-baar naya window na khule
+// 🌐 Browser aur Page setup
 let globalBrowser = null;
 let globalPage = null;
 
+// 🛠️ SMART BROWSER PATH DISCOVERY LOGIC
+const getBrowserPath = () => {
+    // 1. Render Environment Variable Check
+    if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+        console.log(`🌐 [SYSTEM] Using ENV Browser at: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    const platform = os.platform();
+    let paths = [];
+
+    if (platform === 'win32') { // Windows
+        paths = [
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+        ];
+    } else if (platform === 'darwin') { // Mac
+        paths = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'];
+    } else if (platform === 'linux') { // Linux (Render Fallbacks)
+        paths = [
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/google-chrome',
+            '/usr/bin/chromium-browser'
+        ];
+    }
+
+    // 2. Local OS Discovery
+    for (let p of paths) {
+        if (fs.existsSync(p)) {
+            console.log(`🌐 [SYSTEM] Using Local Browser at: ${p}`);
+            return p;
+        }
+    }
+
+    // 3. Fallback: Default Puppeteer Path
+    console.log(`🌐 [SYSTEM] Local browser not found. Using Puppeteer's default.`);
+    return null;
+};
+
 const getSharedPage = async () => {
-    // 🔥 FIX 1: Agar kisi ne manual browser (Chrome) close kar diya hai, toh usko null karo
+    // FIX 1: Browser Connection Check
     if (globalBrowser && !globalBrowser.isConnected()) {
-        console.log("[SYSTEM] Browser was closed manually. Restarting...");
+        console.log("[SYSTEM] Browser was closed. Restarting...");
         globalBrowser = null;
         globalPage = null;
     }
 
-    // 🔥 FIX 2: Agar kisi ne sirf Tab (Page) close kar diya hai
+    // FIX 2: Page Closure Check
     if (globalPage && globalPage.isClosed()) {
-        console.log("[SYSTEM] Page was closed manually. Opening new tab...");
+        console.log("[SYSTEM] Page was closed. Opening new tab...");
         globalPage = null;
     }
 
-    // Naya browser launch logic (Same as before)
     if (!globalBrowser) {
+        const isProduction = process.env.NODE_ENV === 'production';
+
         globalBrowser = await puppeteer.launch({
-            headless: false,
+            // 🔥 RENDER FIX: Production mein headless true hona zaroori hai
+            headless: isProduction ? "new" : false,
             defaultViewport: null,
-            userDataDir: path.join(__dirname, "../../../browser_session"),
+            // 🛑 RENDER FIX: Production mein userDataDir ko handle karna mushkil hota hai, isliye sirf local mein rakhein
+            userDataDir: isProduction ? null : path.join(__dirname, "../../../browser_session"),
             args: [
                 '--no-sandbox',
+                '--disable-setuid-sandbox',
                 '--disable-blink-features=AutomationControlled',
                 '--window-position=maximized',
-                '--disable-setuid-sandbox',
-                '--ignore-gpu-blocklist',
-                '--enable-webgl',
-                '--disable-infobars',
                 '--disable-dev-shm-usage',
-                '--disable-web-security',
-                '--disable-features=IsolateOrigins,site-per-process',
-                '--allow-running-insecure-content',
-                '--disable-site-isolation-trials',
-                '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure',
-                '--disable-features=CrossSiteDocumentBlockingIfIsolating,CrossSiteDocumentBlockingAlways',
-                '--disable-features=CrossSiteDocumentBlockingNever',
+                '--disable-gpu', // Render par GPU nahi hota
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process' // Memory bachane ke liye Render par useful hai
             ],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
-            ignoreDefaultArgs: ['--disable-extensions'],
+            executablePath: getBrowserPath(),
             ignoreHTTPSErrors: true,
         });
 
@@ -53,19 +91,15 @@ const getSharedPage = async () => {
         await context.overridePermissions('https://zoom.earth', ['geolocation']);
     }
 
-    // Agar page dead hai ya abhi tak bana nahi, toh naya page banao
     if (!globalPage) {
         const pages = await globalBrowser.pages();
         globalPage = pages.length > 0 ? pages[0] : await globalBrowser.newPage();
     }
 
-    // 🔥 FIX 3: Try-Catch around bringToFront (100% Crash Proof)
     try {
         await globalPage.bringToFront();
     } catch (error) {
-        console.log("[SYSTEM] Recovering from page bringToFront error...");
         globalPage = await globalBrowser.newPage();
-        await globalPage.bringToFront();
     }
 
     return globalPage;
@@ -74,25 +108,24 @@ const getSharedPage = async () => {
 const openYouTubeSearch = async (query) => {
     try {
         const page = await getSharedPage();
-        await page.goto("https://www.youtube.com", { waitUntil: "domcontentloaded", timeout: 10000 });
+        await page.goto("https://www.youtube.com", { waitUntil: "domcontentloaded", timeout: 20000 });
 
-        const selectors = ["input[aria-label='Search']", "input[placeholder='Search']", "input#search", "input[name='search_query']", "#search"];
+        const selectors = ["input[aria-label='Search']", "input[placeholder='Search']", "input#search", "input[name='search_query']"];
         let found = false;
         for (let sel of selectors) {
             try {
-                await page.waitForSelector(sel, { timeout: 2000 });
-                await page.click(sel, { clickCount: 3 }); // Puraana text clear karo
+                await page.waitForSelector(sel, { timeout: 3000 });
+                await page.click(sel, { clickCount: 3 });
                 await page.type(sel, query);
                 found = true;
                 break;
             } catch (e) { }
         }
 
-        if (!found) return false;
-        await page.keyboard.press("Enter");
-        return true;
+        if (found) await page.keyboard.press("Enter");
+        return found;
     } catch (error) {
-        logger.error("Browser error:", error.message);
+        logger.error("YouTube browser error:", error.message);
         return false;
     }
 };
@@ -100,30 +133,29 @@ const openYouTubeSearch = async (query) => {
 const checkAndOpenWeather = async (location = "Bhubaneswar") => {
     try {
         const page = await getSharedPage();
-
-        // 1. Google Weather Data extract karna
         const searchQuery = encodeURIComponent(`weather in ${location}`);
-        await page.goto(`https://www.google.com/search?q=${searchQuery}&hl=en`, { waitUntil: "domcontentloaded" });
+
+        await page.goto(`https://www.google.com/search?q=${searchQuery}&hl=en`, { waitUntil: "domcontentloaded", timeout: 20000 });
 
         let temp = "N/A", condition = "N/A", humidity = "N/A", wind = "N/A", rain = "N/A";
         try {
-            await page.waitForSelector('#wob_tm', { timeout: 3000 });
+            await page.waitForSelector('#wob_tm', { timeout: 5000 });
             temp = await page.$eval('#wob_tm', el => el.innerText);
             condition = await page.$eval('#wob_dc', el => el.innerText);
             humidity = await page.$eval('#wob_hm', el => el.innerText);
             wind = await page.$eval('#wob_ws', el => el.innerText);
             rain = await page.$eval('#wob_pp', el => el.innerText);
         } catch (e) {
-            logger.warn("Detailed weather fetch failed");
+            logger.warn("Detailed weather fetch failed, basic info only.");
         }
 
-        // 2. Zoom Earth open karna
+        // Zoom Earth logic
         const safeCityName = location.split(" ")[0].trim().toLowerCase();
         const zoomEarthUrl = `https://zoom.earth/places/india/${safeCityName}/`;
 
-        await page.goto(zoomEarthUrl, { waitUntil: "domcontentloaded" });
+        // Background mein Zoom Earth khol do
+        page.goto(zoomEarthUrl).catch(e => console.log("Zoom Earth Load failed"));
 
-        // 🔥 Sirf raw data return karenge, AI khud detailed sentence banayegi
         return `Temperature: ${temp}°C, Condition: ${condition}, Wind: ${wind}, Humidity: ${humidity}, Rain Probability: ${rain}`;
     } catch (error) {
         logger.error("Weather browser error:", error.message);
